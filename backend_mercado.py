@@ -25,23 +25,23 @@ def get_gpt4o_response(conversation):
         response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=conversation,
-            max_tokens=500,
+            max_tokens=300,  # Reducido para limitar la longitud de la respuesta
             temperature=0.7
         )
-        return response["choices"][0]["message"]["content"]
+        return response["choices"][0]["message"]["content"].strip()
     except openai.error.OpenAIError as e:
         return f"Error en la solicitud: {e}"
     except Exception as e:
         return f"Error inesperado: {e}"
 
-# Función para manejar la lógica del agente de marketing
-def marketing_agent(user_input, producto=None, objetivo=None, presupuesto=None):
+# Función para manejar la lógica del agente de mercado
+def market_agent(user_input, categoria=None, ubicacion=None):
     # Establecer conexión con la base de datos
     conn = get_db_connection()
     cursor = conn.cursor()
 
     # Obtener datos relevantes de la base de datos
-    data = query_marketing_data(user_input, cursor, producto, objetivo, presupuesto)
+    data = query_market_data(user_input, cursor, categoria, ubicacion)
 
     # Cerrar la conexión a la base de datos
     cursor.close()
@@ -49,48 +49,56 @@ def marketing_agent(user_input, producto=None, objetivo=None, presupuesto=None):
 
     # Construir la conversación
     conversation = [
-        {"role": "system", "content": "Eres un experto en marketing que proporciona consejos y estrategias basadas en datos."},
-        {"role": "user", "content": f"Pregunta: {user_input}\nDatos relevantes: {data}"}
+        {
+            "role": "system",
+            "content": (
+                "Eres un analista de mercado experto que proporciona insights basados en datos. "
+                "Las respuestas deben ser concisas y no exceder los 3 párrafos."
+            ),
+        },
+        {
+            "role": "user",
+            "content": f"Pregunta: {user_input}\nDatos relevantes: {data}"
+        }
     ]
 
     # Obtener respuesta del modelo
     assistant_reply = get_gpt4o_response(conversation)
     return assistant_reply
 
-def query_marketing_data(question, cursor, producto, objetivo, presupuesto):
-    if "crear" in question.lower() and "campaña de marketing" in question.lower():
-        if producto and objetivo and presupuesto is not None:
+def query_market_data(question, cursor, categoria=None, ubicacion=None):
+    if "precio promedio" in question.lower() and "producto similar" in question.lower():
+        if categoria:
             cursor.execute("""
-                SELECT plataformas_utilizadas, tipo_anuncio, estrategias_utilizadas
-                FROM agente_marketing
-                WHERE presupuesto <= %s
-                ORDER BY presupuesto DESC LIMIT 1;
-            """, (presupuesto,))
-            row = cursor.fetchone()
-            if row:
-                return f"Basado en campañas exitosas, se recomienda para el producto '{producto}' con el objetivo '{objetivo}' y presupuesto ${presupuesto:.2f} usar plataformas '{row[0]}', tipo de anuncio '{row[1]}' y estrategias '{row[2]}'."
+                SELECT AVG(precio) FROM agente_mercado
+                WHERE categoria = %s;
+            """, (categoria,))
+            avg_price = cursor.fetchone()[0]
+            if avg_price:
+                return f"El precio promedio de productos similares en la categoría '{categoria}' es ${avg_price:.2f}."
             else:
-                return "No se encontraron campañas similares para sugerir."
+                return f"No se encontraron datos para la categoría '{categoria}'."
         else:
-            return "Faltan datos necesarios para proporcionar una respuesta completa."
-    elif "promocionar mi producto en redes sociales" in question.lower():
+            return "Categoría del producto no proporcionada."
+    elif "competitivo" in question.lower() and "mi zona" in question.lower():
+        if ubicacion:
+            cursor.execute("""
+                SELECT COUNT(*) FROM agente_mercado
+                WHERE ubicacion_geografica = %s;
+            """, (ubicacion,))
+            competitors = cursor.fetchone()[0]
+            return f"En tu zona ({ubicacion}), hay {competitors} competidores en tu categoría de producto."
+        else:
+            return "Ubicación geográfica no proporcionada."
+    elif "mercados internacionales" in question.lower() and "interesados" in question.lower():
         cursor.execute("""
-            SELECT DISTINCT plataformas_utilizadas FROM agente_marketing;
+            SELECT mercados_internacionales FROM agente_mercado;
         """)
         rows = cursor.fetchall()
-        plataformas = set()
+        mercados = set()
         for row in rows:
-            plataformas.update(map(str.strip, row[0].split(",")))
-        return f"Puedes promocionar tu producto en las siguientes plataformas: {', '.join(plataformas)}."
-    elif "tipo de anuncios funcionan mejor" in question.lower() and "redes sociales" in question.lower():
-        cursor.execute("""
-            SELECT tipo_anuncio, COUNT(*) AS conteo FROM agente_marketing
-            GROUP BY tipo_anuncio ORDER BY conteo DESC LIMIT 1;
-        """)
-        row = cursor.fetchone()
-        if row:
-            return f"El tipo de anuncio que funciona mejor en redes sociales es '{row[0]}'."
-        else:
-            return "No se encontró información sobre el tipo de anuncios."
+            mercados.update(map(str.strip, row[0].split(",")))
+        return f"Mercados internacionales potenciales: {', '.join(mercados)}."
+    # Agregar más condiciones para otras preguntas
     else:
-        return "No se encontraron datos específicos para tu pregunta, pero puedes proporcionar más detalles."
+        return "No se encontraron datos específicos para tu pregunta, pero puedo proporcionarte insights generales de mercado."

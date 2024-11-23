@@ -25,10 +25,10 @@ def get_gpt4o_response(conversation):
         response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=conversation,
-            max_tokens=500,
+            max_tokens=300,  # Reducido para limitar la longitud de la respuesta
             temperature=0.7
         )
-        return response["choices"][0]["message"]["content"]
+        return response["choices"][0]["message"]["content"].strip()
     except openai.error.OpenAIError as e:
         return f"Error en la solicitud: {e}"
     except Exception as e:
@@ -54,6 +54,7 @@ def marketing_agent(user_input, producto=None, objetivo=None, presupuesto=None):
             "content": (
                 "Eres un experto en marketing que proporciona consejos y estrategias "
                 "basadas en los Datos relevantes que se te proporcionan. "
+                "Las respuestas deben ser concisas y no exceder los 3 párrafos. "
                 "Asegúrate de utilizar los Datos relevantes en tu respuesta y de adaptarlos "
                 "a la situación específica del usuario."
             ),
@@ -81,9 +82,8 @@ def query_marketing_data(question, cursor, producto=None, objetivo=None, presupu
             row = cursor.fetchone()
             if row:
                 data = (
-                    f"Basado en campañas exitosas similares, se recomienda para el producto '{producto}' con el objetivo '{objetivo}' "
-                    f"y presupuesto ${presupuesto:.2f}, utilizar las siguientes plataformas: {row[0]}, "
-                    f"tipo de anuncio: {row[1]}, y estrategias: {row[2]}."
+                    f"Para tu producto '{producto}' con el objetivo '{objetivo}' y presupuesto ${presupuesto:.2f}, "
+                    f"se recomienda utilizar las plataformas: {row[0]}, tipo de anuncio: {row[1]}, y estrategias: {row[2]}."
                 )
             else:
                 data = (

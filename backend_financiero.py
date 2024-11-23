@@ -25,10 +25,10 @@ def get_gpt4o_response(conversation):
         response = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=conversation,
-            max_tokens=500,
+            max_tokens=300,  # Reducido para limitar la longitud de la respuesta
             temperature=0.7
         )
-        return response["choices"][0]["message"]["content"]
+        return response["choices"][0]["message"]["content"].strip()
     except openai.error.OpenAIError as e:
         return f"Error en la solicitud: {e}"
     except Exception as e:
@@ -49,8 +49,17 @@ def financial_agent(user_input):
 
     # Construir la conversación
     conversation = [
-        {"role": "system", "content": "Eres un asesor financiero experto que proporciona respuestas detalladas basadas en los datos proporcionados."},
-        {"role": "user", "content": f"Pregunta: {user_input}\nDatos relevantes: {data}"}
+        {
+            "role": "system",
+            "content": (
+                "Eres un asesor financiero experto que proporciona respuestas detalladas "
+                "basadas en los datos proporcionados. Las respuestas deben ser concisas y no exceder los 3 párrafos."
+            ),
+        },
+        {
+            "role": "user",
+            "content": f"Pregunta: {user_input}\nDatos relevantes: {data}"
+        }
     ]
 
     # Obtener respuesta del modelo
@@ -69,7 +78,7 @@ def query_financial_data(question, cursor):
         opciones = set()
         for row in rows:
             opciones.update(map(str.strip, row[0].split(",")))
-        return f"Opciones de financiamiento para negocios pequeños: {', '.join(opciones)}"
+        return f"Opciones de financiamiento para negocios pequeños: {', '.join(opciones)}."
     elif "califico para un préstamo" in question.lower():
         # Proporcionar información general sobre calificación para préstamos
         cursor.execute("""
@@ -79,7 +88,8 @@ def query_financial_data(question, cursor):
         niveles = [row[0] for row in rows]
         ingresos = [row[1] for row in rows]
         promedio_ingresos = sum(ingresos) / len(ingresos)
-        return f"El nivel de endeudamiento promedio es {niveles.count('Bajo') / len(niveles) * 100}% bajo. Los ingresos mensuales promedio son ${promedio_ingresos:.2f}."
+        porcentaje_bajo = niveles.count('Bajo') / len(niveles) * 100
+        return f"El nivel de endeudamiento promedio es {porcentaje_bajo:.2f}% bajo. Los ingresos mensuales promedio son ${promedio_ingresos:.2f}."
     elif "documentos necesito" in question.lower() and "préstamo" in question.lower():
         cursor.execute("""
             SELECT DISTINCT documentos_necesarios FROM agente_financiero;
@@ -88,8 +98,7 @@ def query_financial_data(question, cursor):
         documentos = set()
         for row in rows:
             documentos.update(map(str.strip, row[0].split(",")))
-        return f"Documentos necesarios para pedir un préstamo: {', '.join(documentos)}"
+        return f"Documentos necesarios para pedir un préstamo: {', '.join(documentos)}."
     # Agregar más condiciones para otras preguntas
     else:
         return "No se encontraron datos específicos para tu pregunta, pero puedes proporcionar más detalles."
-
