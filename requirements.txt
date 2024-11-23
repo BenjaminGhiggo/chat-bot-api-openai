@@ -5,7 +5,7 @@ langchain-experimental
 python-dotenv
 streamlit
 streamlit-chat
-openai
+openai==0.28.0
 # pip install --upgrade langchain langchain-experimental openai
 
 # pip install --upgrade openai

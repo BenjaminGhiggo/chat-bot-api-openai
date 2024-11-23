@@ -1,6 +1,4 @@
 ven/
-
 __pycache__/
-
-.venv
+.env
 a_env_vars.py
