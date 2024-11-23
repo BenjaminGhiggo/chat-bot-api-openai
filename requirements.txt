@@ -10,3 +10,4 @@ openai
 
 # pip install --upgrade openai
 streamlit
+psycopg2
