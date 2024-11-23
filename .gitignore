@@ -2,3 +2,4 @@ ven/
 __pycache__/
 .env
 a_env_vars.py
+ecommerce.db
