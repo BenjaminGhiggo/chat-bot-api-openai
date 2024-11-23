@@ -1,34 +1,24 @@
-from langchain.chat_models import ChatOpenAI
-from langchain.sql_database import SQLDatabase
-from langchain_experimental.sql import SQLDatabaseChain
-from langchain.cache import BaseCache
-import os
+import openai
 from dotenv import load_dotenv
+import os
 
 # Cargar variables de entorno desde .env
 load_dotenv()
 
-# Definir la base del modelo de caché
-class SimpleCache(BaseCache):
-    pass
+# Configurar la clave API
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Registrar la caché si es necesario
-SimpleCache()
-
-# 1. Configurar la clave API de OpenAI
-os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-
-# 2. Cargar la base de datos
-db = SQLDatabase.from_uri("sqlite:///ecommerce.db")
-
-# 3. Crear el modelo de lenguaje (LLM)
-llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo')
-
-# 4. Crear la cadena usando `SQLDatabaseChain`
-SQLDatabaseChain.model_rebuild()  # Reconstruir el modelo
-db_chain = SQLDatabaseChain.from_llm(llm=llm, database=db, verbose=True)
-
-# 5. Definir una función para realizar consultas
-def consulta(input_usuario):
-    resultado = db_chain.run(input_usuario)
-    return resultado
+# Función para obtener la respuesta del modelo GPT-4o
+def get_gpt4o_response(conversation):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4o",
+            messages=conversation,
+            max_tokens=150,
+            temperature=1
+        )
+        return response["choices"][0]["message"]["content"]
+    except openai.error.OpenAIError as e:
+        return f"Error en la solicitud: {e}"
+    except Exception as e:
+        return f"Error inesperado: {e}"
