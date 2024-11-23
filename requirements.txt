@@ -1,0 +1,12 @@
+langchain 
+langchain-community
+langchain-openai
+langchain-experimental
+python-dotenv
+streamlit
+streamlit-chat
+openai
+# pip install --upgrade langchain langchain-experimental openai
+
+# pip install --upgrade openai
+streamlit
