@@ -11,3 +11,5 @@ openai==0.28.0
 # pip install --upgrade openai
 streamlit
 psycopg2
+fastapi 
+pydantic
