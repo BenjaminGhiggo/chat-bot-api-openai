@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from backend_financiero import financial_agent
 from backend_marketing import marketing_agent
 from backend_mercado import market_agent
+from typing import Optional
 
 # Crear instancia de FastAPI
 app = FastAPI(title="API de Agentes", version="1.0")
@@ -29,8 +30,8 @@ class MarketingRequest(BaseModel):
 
 class MarketRequest(BaseModel):
     user_input: str
-    categoria: str = None
-    ubicacion: str = None
+    categoria: Optional[str] = None
+    ubicacion: Optional[str] = None
 
 # Rutas de la API
 
