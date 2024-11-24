@@ -1,13 +1,8 @@
-langchain 
-langchain-community
-langchain-openai
-langchain-experimental
 python-dotenv
 streamlit
 streamlit-chat
 openai==0.28.0
 # pip install --upgrade langchain langchain-experimental openai
-
 # pip install --upgrade openai
 streamlit
 psycopg2
